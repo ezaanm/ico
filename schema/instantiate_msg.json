@@ -3,7 +3,8 @@
   "title": "InstantiateMsg",
   "type": "object",
   "required": [
-    "base_conv_ratio",
+    "base_conv_ratio_den",
+    "base_conv_ratio_num",
     "decimals",
     "fundraise_denom",
     "fundraise_goal",
@@ -11,11 +12,19 @@
     "symbol"
   ],
   "properties": {
-    "base_conv_ratio": {
-      "description": "conversion ratio of fundraise_denom:derivative_token",
+    "base_conv_ratio_den": {
+      "description": "denominator of ratio of fundraise_denom:derivative_token (how much derivative_token made)",
       "allOf": [
         {
-          "$ref": "#/definitions/Decimal"
+          "$ref": "#/definitions/Uint128"
+        }
+      ]
+    },
+    "base_conv_ratio_num": {
+      "description": "numerator of ratio of fundraise_denom:derivative_token (how much fundraise_denom)",
+      "allOf": [
+        {
+          "$ref": "#/definitions/Uint128"
         }
       ]
     },
@@ -48,7 +57,7 @@
         "null"
       ],
       "items": {
-        "$ref": "#/definitions/Rate"
+        "$ref": "#/definitions/RateInit"
       }
     },
     "symbol": {
@@ -57,30 +66,35 @@
     }
   },
   "definitions": {
-    "Decimal": {
-      "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
-      "type": "string"
-    },
-    "Rate": {
+    "RateInit": {
       "type": "object",
       "required": [
         "min",
-        "ratio"
+        "ratio_den",
+        "ratio_num"
       ],
       "properties": {
         "min": {
-          "description": "min fundraise_denom sent for this rate",
+          "description": "min fundraise_denom sent to get this rate",
           "allOf": [
             {
               "$ref": "#/definitions/Uint128"
             }
           ]
         },
-        "ratio": {
-          "description": "conversion rate from fundraise_denom:ASSET",
+        "ratio_den": {
+          "description": "denominator of ratio of fundraise_denom:derivative_token (how much derivative_token made)",
           "allOf": [
             {
-              "$ref": "#/definitions/Decimal"
+              "$ref": "#/definitions/Uint128"
+            }
+          ]
+        },
+        "ratio_num": {
+          "description": "numerator of ratio of fundraise_denom:derivative_token (how much fundraise_denom)",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Uint128"
             }
           ]
         }

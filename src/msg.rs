@@ -9,12 +9,14 @@ use crate::state::{Fundraiser, Rate};
 pub struct InstantiateMsg {
     /// goal fundraise amount
     pub fundraise_goal: Uint128,
-    /// conversion ratio of fundraise_denom:derivative_token 
-    pub base_conv_ratio: Decimal,
+    /// numerator of ratio of fundraise_denom:derivative_token (how much fundraise_denom)
+    pub base_conv_ratio_num: Uint128,
+    /// denominator of ratio of fundraise_denom:derivative_token (how much derivative_token made)
+    pub base_conv_ratio_den: Uint128,
     /// denom of coins sent to this contract for fundraising
     pub fundraise_denom: String,
     /// nullable field of Rates
-    pub rates: Option<Vec<Rate>>,
+    pub rates: Option<Vec<RateInit>>,
 
     /// name of the derivative token
     pub name: String,
@@ -22,6 +24,17 @@ pub struct InstantiateMsg {
     pub symbol: String,
     /// decimal places of the derivative token (for UI)
     pub decimals: u8,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct RateInit {
+    /// min fundraise_denom sent to get this rate
+    pub min: Uint128,
+
+    /// numerator of ratio of fundraise_denom:derivative_token (how much fundraise_denom)
+    pub ratio_num: Uint128,
+    /// denominator of ratio of fundraise_denom:derivative_token (how much derivative_token made)
+    pub ratio_den: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

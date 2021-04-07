@@ -76,7 +76,7 @@
       ],
       "properties": {
         "min": {
-          "description": "min fundraise_denom sent for this rate",
+          "description": "min fundraise_denom sent to get this rate",
           "allOf": [
             {
               "$ref": "#/definitions/Uint128"

@@ -2,7 +2,7 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     attr, to_binary, Binary, Deps, DepsMut, Env, HumanAddr,
-    MessageInfo, Response, StdResult, WasmMsg, Uint128
+    MessageInfo, Response, StdResult, WasmMsg, Uint128, Decimal
 };
 
 use cw2::set_contract_version;
@@ -29,20 +29,24 @@ pub fn instantiate(
 ) -> StdResult<Response> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
+    //flip to be den/num to support multiplication
+    let base_ratio = Decimal::from_ratio(msg.base_conv_ratio_den, msg.base_conv_ratio_num);
+
     let ico_rates:Vec<Rate> = match msg.rates {
-        Some(mut v) => {
-            v.push(Rate{min: Uint128(0), ratio: msg.base_conv_ratio});
-            v.sort_by(|a, b| b.min.cmp(&a.min));
-            v
+        Some(init_rates) => {
+            let mut rates:Vec<Rate> = init_rates.iter().map(|x| Rate{min: x.min, ratio: Decimal::from_ratio(x.ratio_den, x.ratio_num)}).collect();
+            rates.push(Rate{min: Uint128(0), ratio: base_ratio});
+            rates.sort_by(|a, b| b.min.cmp(&a.min));
+            rates
         },
-        None => vec![Rate{min: Uint128(0), ratio: msg.base_conv_ratio}],
+        None => vec![Rate{min: Uint128(0), ratio: base_ratio}],
     };
     
     //setup ICO base information
     let ico_info = ICOInfo {
         fundraise_goal: msg.fundraise_goal,
         fundraise_bal: Uint128(0),
-        base_conv_ratio: msg.base_conv_ratio,
+        base_conv_ratio: base_ratio,
         owner: deps.api.canonical_address(&info.sender)?,
         fundraising_open: true,
         fundraise_denom: msg.fundraise_denom,
@@ -191,7 +195,8 @@ pub fn _send_tokens(
             None => ico_info.base_conv_ratio,
         };
 
-        let recieves = ratio * f.balance;
+        let recieves = f.balance * ratio;
+        
         to_mint += recieves;
 
         let binary_msg = to_binary(&ExecuteMsg::Transfer {
@@ -272,8 +277,7 @@ mod tests {
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info, MOCK_CONTRACT_ADDR};
     use cosmwasm_std::{coins, CosmosMsg, Uint128, Decimal};
     use cw20::{TokenInfoResponse, BalanceResponse};
-
-    // use crate::msg::ExecuteMsg::TopUp;
+    use crate::msg::RateInit;
 
     use super::*;
 
@@ -284,7 +288,8 @@ mod tests {
         // instantiate a contract
         let instantiate_msg = InstantiateMsg {
             fundraise_goal: Uint128(100),
-            base_conv_ratio: Decimal::one(),
+            base_conv_ratio_num: Uint128(1),
+            base_conv_ratio_den: Uint128(1),
             fundraise_denom: "uluna".to_string(),
             name: "Shark Coin".to_string(),
             symbol: "ushark".to_string(),
@@ -341,7 +346,8 @@ mod tests {
         // instantiate a contract
         let instantiate_msg = InstantiateMsg {
             fundraise_goal: Uint128(100),
-            base_conv_ratio: Decimal::one(),
+            base_conv_ratio_num: Uint128(1),
+            base_conv_ratio_den: Uint128(1),
             fundraise_denom: "uluna".to_string(),
             name: "Shark Coin".to_string(),
             symbol: "ushark".to_string(),
@@ -373,7 +379,8 @@ mod tests {
         // instantiate a contract
         let instantiate_msg = InstantiateMsg {
             fundraise_goal: Uint128(100),
-            base_conv_ratio: Decimal::one(),
+            base_conv_ratio_num: Uint128(1),
+            base_conv_ratio_den: Uint128(1),
             fundraise_denom: "uluna".to_string(),
             name: "Shark Coin".to_string(),
             symbol: "ushark".to_string(),
@@ -507,12 +514,14 @@ mod tests {
         // instantiate a contract
         let instantiate_msg = InstantiateMsg {
             fundraise_goal: Uint128(10),
-            base_conv_ratio: Decimal::one(),
+            base_conv_ratio_num: Uint128(1),
+            base_conv_ratio_den: Uint128(1),
             fundraise_denom: "uluna".to_string(),
             name: "Shark Coin".to_string(),
             symbol: "ushark".to_string(),
             decimals: 0,
-            rates: Some(vec![Rate {min: Uint128(10), ratio: Decimal::percent(200)}, Rate {min: Uint128(20), ratio: Decimal::percent(300)}]),
+            rates: Some(vec![RateInit {min: Uint128(10), ratio_num: Uint128(1), ratio_den: Uint128(2)}, 
+                             RateInit {min: Uint128(20), ratio_num: Uint128(1), ratio_den: Uint128(3)}]),
         };
 
         let info = mock_info(&HumanAddr::from("god"), &[]);
