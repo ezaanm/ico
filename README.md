@@ -13,12 +13,14 @@ This contract only accepts coins of type ```fundraise_denom```, and taps into [C
 pub struct InstantiateMsg {
     /// goal fundraise amount
     pub fundraise_goal: Uint128,
-    /// conversion ratio of fundraise_denom:derivative_token 
-    pub base_conv_ratio: Decimal,
+    /// numerator of ratio of fundraise_denom:derivative_token (how much fundraise_denom)
+    pub base_conv_ratio_num: Uint128,
+    /// denominator of ratio of fundraise_denom:derivative_token (how much derivative_token made)
+    pub base_conv_ratio_den: Uint128,
     /// denom of coins sent to this contract for fundraising
     pub fundraise_denom: String,
     /// nullable field of Rates
-    pub rates: Option<Vec<Rate>>,
+    pub rates: Option<Vec<RateInit>>,
 
     /// name of the derivative token
     pub name: String,
@@ -30,14 +32,16 @@ pub struct InstantiateMsg {
 ```
 ICO initial state is defined along with the name and symbol of the derivative tokens that will be minted and sent to funders when funding is closed. Sets initial derivative token supply to 0 and fundraising to open.
 
-Custom rates can simply be provided in a ```Vec<Rate>```, where Rate is defined as:
+Custom rates can simply be provided in a ```Vec<RateInit>```, where ```RateInit``` is defined as:
 ```
-pub struct Rate {
+pub struct RateInit {
     /// min fundraise_denom sent to get this rate
     pub min: Uint128,
 
-    /// conversion rate from fundraise_denom:ASSET
-    pub ratio: Decimal,
+    /// numerator of ratio of fundraise_denom:derivative_token (how much fundraise_denom)
+    pub ratio_num: Uint128,
+    /// denominator of ratio of fundraise_denom:derivative_token (how much derivative_token made)
+    pub ratio_den: Uint128,
 }
 ```
 
