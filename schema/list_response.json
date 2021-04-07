@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ListResponse",
+  "type": "object",
+  "required": [
+    "fundraisers",
+    "total_staked"
+  ],
+  "properties": {
+    "fundraisers": {
+      "description": "list all stakers and how much",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Fundraiser"
+      }
+    },
+    "total_staked": {
+      "description": "total staked",
+      "allOf": [
+        {
+          "$ref": "#/definitions/Uint128"
+        }
+      ]
+    }
+  },
+  "definitions": {
+    "Fundraiser": {
+      "type": "object",
+      "required": [
+        "balance",
+        "source"
+      ],
+      "properties": {
+        "balance": {
+          "description": "Balance of Native tokens sent to ICO",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Uint128"
+            }
+          ]
+        },
+        "source": {
+          "description": "who sent Luna",
+          "allOf": [
+            {
+              "$ref": "#/definitions/HumanAddr"
+            }
+          ]
+        }
+      }
+    },
+    "HumanAddr": {
+      "type": "string"
+    },
+    "Uint128": {
+      "type": "string"
+    }
+  }
+}

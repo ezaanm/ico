@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "QueryMsg",
+  "anyOf": [
+    {
+      "description": "Shows how much we have raised so far and our goal",
+      "type": "object",
+      "required": [
+        "fundraise_info"
+      ],
+      "properties": {
+        "fundraise_info": {
+          "type": "object"
+        }
+      }
+    },
+    {
+      "description": "Shows how much has been staked for each address",
+      "type": "object",
+      "required": [
+        "staked_info"
+      ],
+      "properties": {
+        "staked_info": {
+          "type": "object"
+        }
+      }
+    },
+    {
+      "description": "Implements CW20. Returns the current balance of the given address, 0 if unset.",
+      "type": "object",
+      "required": [
+        "balance"
+      ],
+      "properties": {
+        "balance": {
+          "type": "object",
+          "required": [
+            "address"
+          ],
+          "properties": {
+            "address": {
+              "$ref": "#/definitions/HumanAddr"
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "Implements CW20. Returns metadata on the contract - name, decimals, supply, etc.",
+      "type": "object",
+      "required": [
+        "token_info"
+      ],
+      "properties": {
+        "token_info": {
+          "type": "object"
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "HumanAddr": {
+      "type": "string"
+    }
+  }
+}
