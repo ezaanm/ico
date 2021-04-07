@@ -1,6 +1,6 @@
 # A _beautiful_ yet **simple** ICO Contract
 
-A Basic ICO contract that can be deployed on cosmos chains like Terra, handles basic logic of accepting funds from contributors during when funding is open, closing funding with proper authentication or when target goal has been reached, and minting and transferring custom derivative tokens to funders. Built with rust and cosmwasm-std 0.14.
+A Basic ICO contract that can be deployed on cosmos chains like Terra, handles basic logic of accepting funds from contributors during when funding is open, closing funding with proper authentication or when target goal has been reached, minting according to rates provided, and transferring custom derivative tokens to funders. Built with rust and cosmwasm-std 0.14.
 
 ## Token types
 Defined in the ```InstantiateMsg``` when the contract is instantiated.
@@ -17,6 +17,8 @@ pub struct InstantiateMsg {
     pub base_conv_ratio: Decimal,
     /// denom of coins sent to this contract for fundraising
     pub fundraise_denom: String,
+    /// nullable field of Rates
+    pub rates: Option<Vec<Rate>>,
 
     /// name of the derivative token
     pub name: String,
@@ -27,6 +29,17 @@ pub struct InstantiateMsg {
 }
 ```
 ICO initial state is defined along with the name and symbol of the derivative tokens that will be minted and sent to funders when funding is closed. Sets initial derivative token supply to 0 and fundraising to open.
+
+Custom rates can simply be provided in a ```Vec<Rate>```, where Rate is defined as:
+```
+pub struct Rate {
+    /// min fundraise_denom sent to get this rate
+    pub min: Uint128,
+
+    /// conversion rate from fundraise_denom:ASSET
+    pub ratio: Decimal,
+}
+```
 
 ### ExecuteMsg
 ```
@@ -56,7 +69,7 @@ Transfer is a base message to move tokens to another account without triggering 
 ```
 FundraiseInfo {}
 ```
-Returns status of ICO: fundraise_goal, fundraise_bal, and other basic information.
+Returns status of ICO: fundraise_goal, fundraise_bal, available rates, and other basic information.
 
 ```
 StakedInfo {}

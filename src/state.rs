@@ -40,7 +40,7 @@ pub struct Fundraiser {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct Rate {
-    /// min fundraise_denom sent for this rate
+    /// min fundraise_denom sent to get this rate
     pub min: Uint128,
 
     /// conversion rate from fundraise_denom:ASSET
