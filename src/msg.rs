@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{HumanAddr, Uint128, Decimal};
 
-use crate::state::Fundraiser;
+use crate::state::{Fundraiser, Rate};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
@@ -13,6 +13,8 @@ pub struct InstantiateMsg {
     pub base_conv_ratio: Decimal,
     /// denom of coins sent to this contract for fundraising
     pub fundraise_denom: String,
+    /// nullable field of Rates
+    pub rates: Option<Vec<Rate>>,
 
     /// name of the derivative token
     pub name: String,
@@ -73,4 +75,6 @@ pub struct FundraiseInfoResponse {
     pub fundraising_open: bool,
     /// Denom of token accepted to fundraise with
     pub fundraise_denom: String,
+    /// rates offered
+    pub rates: Vec<Rate>,
 }

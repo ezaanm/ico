@@ -12,7 +12,7 @@ pub struct ICOInfo {
     pub fundraise_goal: Uint128,
     ///value of how much we have raised so far
     pub fundraise_bal: Uint128,
-    ///initial ratio of LUNA:ASSET 
+    ///initial ratio of fundraise_denom:ASSET 
     pub base_conv_ratio: Decimal,
     /// who created this ICO
     pub owner: CanonicalAddr,
@@ -22,6 +22,9 @@ pub struct ICOInfo {
     pub fundraise_denom: String,
     ///list of contributors and how much they have sent
     pub fundraisers: Vec<Fundraiser>,
+    /// list of alternate rates for different sent amounts
+    pub rates: Vec<Rate>,
+
 }
 
 pub const ICO: Item<ICOInfo> = Item::new("ico");
@@ -33,4 +36,13 @@ pub struct Fundraiser {
 
     /// Balance of Native tokens sent to ICO
     pub balance: Uint128,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct Rate {
+    /// min fundraise_denom sent for this rate
+    pub min: Uint128,
+
+    /// conversion rate from fundraise_denom:ASSET
+    pub ratio: Decimal,
 }

@@ -8,7 +8,8 @@
     "fundraise_denom",
     "fundraise_goal",
     "fundraising_open",
-    "owner"
+    "owner",
+    "rates"
   ],
   "properties": {
     "base_conv_ratio": {
@@ -50,6 +51,13 @@
           "$ref": "#/definitions/HumanAddr"
         }
       ]
+    },
+    "rates": {
+      "description": "rates offered",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Rate"
+      }
     }
   },
   "definitions": {
@@ -59,6 +67,31 @@
     },
     "HumanAddr": {
       "type": "string"
+    },
+    "Rate": {
+      "type": "object",
+      "required": [
+        "min",
+        "ratio"
+      ],
+      "properties": {
+        "min": {
+          "description": "min fundraise_denom sent for this rate",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Uint128"
+            }
+          ]
+        },
+        "ratio": {
+          "description": "conversion rate from fundraise_denom:ASSET",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Decimal"
+            }
+          ]
+        }
+      }
     },
     "Uint128": {
       "type": "string"

@@ -14,7 +14,7 @@ use crate::msg::{
     ExecuteMsg, InstantiateMsg, FundraiseInfoResponse, ListResponse, QueryMsg,
 };
 
-use crate::state::{ICOInfo, Fundraiser, ICO};
+use crate::state::{ICOInfo, Fundraiser, ICO, Rate};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:icov3";
@@ -28,6 +28,15 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    let ico_rates:Vec<Rate> = match msg.rates {
+        Some(mut v) => {
+            v.push(Rate{min: Uint128(0), ratio: msg.base_conv_ratio});
+            v.sort_by(|a, b| b.min.cmp(&a.min));
+            v
+        },
+        None => vec![Rate{min: Uint128(0), ratio: msg.base_conv_ratio}],
+    };
     
     //setup ICO base information
     let ico_info = ICOInfo {
@@ -38,6 +47,7 @@ pub fn instantiate(
         fundraising_open: true,
         fundraise_denom: msg.fundraise_denom,
         fundraisers: vec![],
+        rates: ico_rates,
     };
 
     ICO.save(deps.storage, &ico_info)?;
@@ -170,21 +180,23 @@ pub fn _send_tokens(
 
     let ico_info = ICO.load(deps.storage)?;
 
-    //mint required tokens to the contract itself DOES THIS EVEN WORK?
-    // call into cw20-base to mint the token, call as self as no one else is allowed
-    let sub_info = MessageInfo {
-        sender: human_contract_address.clone(),
-        funds: vec![],
-    };
-    execute_mint(deps.branch(), env, sub_info, human_contract_address.clone(), ico_info.fundraise_bal)?;
-
     //iter through fundraisers and send them right number of tokens
     let mut messages = vec![];
+    let mut to_mint = Uint128(0);
 
     for f in &ico_info.fundraisers {
+        let f_rate = ico_info.rates.iter().find(|r| f.balance >= r.min);
+        let ratio = match f_rate {
+            Some(r) => r.ratio,
+            None => ico_info.base_conv_ratio,
+        };
+
+        let recieves = ratio * f.balance;
+        to_mint += recieves;
+
         let binary_msg = to_binary(&ExecuteMsg::Transfer {
             recipient: f.source.clone(),
-            amount: ico_info.base_conv_ratio * f.balance,
+            amount: recieves,
         })?;
 
         let wasm_exec = WasmMsg::Execute {
@@ -196,7 +208,16 @@ pub fn _send_tokens(
         messages.push(wasm_exec);
     }
 
+    //mint required tokens to the contract itself DOES THIS EVEN WORK?
+    // call into cw20-base to mint the token, call as self as no one else is allowed
+    let sub_info = MessageInfo {
+        sender: human_contract_address.clone(),
+        funds: vec![],
+    };
 
+    execute_mint(deps.branch(), env, sub_info, human_contract_address.clone(), to_mint)?;
+
+    //send
     let res = Response {
         submessages: vec![],
         messages,
@@ -228,6 +249,7 @@ pub fn query_fundraise(deps: Deps) -> StdResult<FundraiseInfoResponse> {
         owner: deps.api.human_address(&ico_info.owner)?,
         fundraising_open: ico_info.fundraising_open,
         fundraise_denom: ico_info.fundraise_denom,
+        rates: ico_info.rates,
     };
     Ok(res)
 }
@@ -267,6 +289,7 @@ mod tests {
             name: "Shark Coin".to_string(),
             symbol: "ushark".to_string(),
             decimals: 0,
+            rates: None,
         };
 
         let info = mock_info(&HumanAddr::from("god"), &[]);
@@ -301,6 +324,7 @@ mod tests {
                 owner: HumanAddr::from("god"),
                 fundraising_open: true,
                 fundraise_denom: "uluna".to_string(),
+                rates: vec![Rate {min: Uint128(0), ratio: Decimal::one()}],
             }
         );
 
@@ -322,6 +346,7 @@ mod tests {
             name: "Shark Coin".to_string(),
             symbol: "ushark".to_string(),
             decimals: 0,
+            rates: None,
         };
 
         let info = mock_info(&HumanAddr::from("god"), &[]);
@@ -353,6 +378,7 @@ mod tests {
             name: "Shark Coin".to_string(),
             symbol: "ushark".to_string(),
             decimals: 0,
+            rates: None,
         };
 
         let info = mock_info(&HumanAddr::from("god"), &[]);
@@ -399,7 +425,7 @@ mod tests {
         let msg = ExecuteMsg::_SendTokens {};
         let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-        //check if 100 token was minted
+        //check if 150 token was minted
         let qtoken = query_token_info(deps.as_ref()).unwrap();
         assert_eq!(
             qtoken,
@@ -455,5 +481,103 @@ mod tests {
             }
         );
 
+    }
+
+    #[test]
+    fn rate_sort() {
+        let mut rate_arr:Vec<Rate> = vec![];
+
+        let r1 = Rate {min: Uint128(5), ratio: Decimal::percent(120)};
+        let r2 = Rate {min: Uint128(10), ratio: Decimal::percent(200)};
+
+        rate_arr.push(r1);
+        rate_arr.push(r2);
+
+        assert_eq!(rate_arr[0], Rate {min: Uint128(5), ratio: Decimal::percent(120)});
+
+        rate_arr.sort_by(|a, b| b.min.cmp(&a.min));
+
+        assert_eq!(rate_arr[0], Rate {min: Uint128(10), ratio: Decimal::percent(200)});
+    }
+
+    #[test]
+    fn recieve_proper_rate() {
+        let mut deps = mock_dependencies(&[]);
+
+        // instantiate a contract
+        let instantiate_msg = InstantiateMsg {
+            fundraise_goal: Uint128(10),
+            base_conv_ratio: Decimal::one(),
+            fundraise_denom: "uluna".to_string(),
+            name: "Shark Coin".to_string(),
+            symbol: "ushark".to_string(),
+            decimals: 0,
+            rates: Some(vec![Rate {min: Uint128(10), ratio: Decimal::percent(200)}, Rate {min: Uint128(20), ratio: Decimal::percent(300)}]),
+        };
+
+        let info = mock_info(&HumanAddr::from("god"), &[]);
+        let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
+        assert_eq!(0, res.messages.len());
+
+        //add funds
+        let sender = HumanAddr::from("casper");
+        let balance = coins(5, "uluna");
+        let info = mock_info(&sender, &balance);
+        let msg = ExecuteMsg::AddFunds {};
+        let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+        assert_eq!(0, res.messages.len());
+        assert_eq!(attr("action", "add_funds"), res.attributes[0]);
+
+        //add funds
+        let sender = HumanAddr::from("marcel");
+        let balance = coins(10, "uluna");
+        let info = mock_info(&sender, &balance);
+        let msg = ExecuteMsg::AddFunds {};
+        let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+        assert_eq!(0, res.messages.len());
+        assert_eq!(attr("action", "add_funds"), res.attributes[0]);
+
+        //add funds
+        let sender = HumanAddr::from("kanye");
+        let balance = coins(50, "uluna");
+        let info = mock_info(&sender, &balance);
+        let msg = ExecuteMsg::AddFunds {};
+        let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+        assert_eq!(0, res.messages.len());
+        assert_eq!(attr("action", "add_funds"), res.attributes[0]);
+
+        //close fundraise
+        let sender = HumanAddr::from("casper");
+        let info = mock_info(&sender, &[]);
+        let msg = ExecuteMsg::CloseFundraise {};
+        let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+        assert_eq!(1, res.messages.len());
+        assert_eq!(attr("action", "close_fundraise"), res.attributes[0]);
+        
+        let sendmsg = &res.messages[0];
+        match sendmsg {
+            CosmosMsg::Wasm(WasmMsg::Execute { contract_addr, msg:_, send }) => {
+                assert_eq!(send, &[]);
+                assert_eq!(contract_addr, &HumanAddr::from(MOCK_CONTRACT_ADDR));
+            }
+            _ => panic!("Unexpected message: {:?}", sendmsg),
+        }
+
+        //fake callback
+        let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+        let msg = ExecuteMsg::_SendTokens {};
+        let _ = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        //check if 5 + 10*2 + 50*3 = 175 tokens were minted
+        let qtoken = query_token_info(deps.as_ref()).unwrap();
+        assert_eq!(
+            qtoken,
+            TokenInfoResponse {
+                name: "Shark Coin".to_string(),
+                symbol: "ushark".to_string(),
+                decimals: 0,
+                total_supply: Uint128(175),
+            }
+        );
     }
 }
