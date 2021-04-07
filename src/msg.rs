@@ -7,8 +7,11 @@ use crate::state::Fundraiser;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
+    /// goal fundraise amount
     pub fundraise_goal: Uint128,
+    /// conversion ratio of fundraise_denom:derivative_token 
     pub base_conv_ratio: Decimal,
+    /// denom of coins sent to this contract for fundraising
     pub fundraise_denom: String,
 
     /// name of the derivative token
