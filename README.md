@@ -1,5 +1,7 @@
 # A _beautiful_ yet **simple** ICO Contract
 
+A Basic ICO contract that can be deployed on cosmos chains like Terra, handles basic logic of accepting funds from contributors during when funding is open, closing funding with proper authentication or when target goal has been reached, and minting and transferring custom derivative tokens to funders.
+
 ## Token types
 Defined in the ```InstantiateMsg``` when the contract is instantiated.
 
