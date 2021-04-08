@@ -93,3 +93,5 @@ Returns metadata on the derivate token - name, decimals, supply, etc.
 ## Testing
 ```cargo test``` will fire off a set of tests defined in contract.rs
 
+icov3.wasm can be deployed onto chains that support cosmawsm-std 0.14 like the hackatom russia network (down right now) or a local wasmd node by checking out ```wasmd v0.16.0-alpha1``` and using these [cosmwasm docs](https://docs.cosmwasm.com/0.13/getting-started/setting-env.html#run-local-node-optional).
+
