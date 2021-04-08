@@ -9,11 +9,8 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized {},
 
-    #[error("Send some coins to create an escrow")]
+    #[error("Must send a positive balance of accepted coins")]
     EmptyBalance {},
-
-    #[error("Only luna can be sent to fundraise")]
-    WrongNative {},
 
     #[error("Fundraising has been closed")]
     FundraiseClosed {},

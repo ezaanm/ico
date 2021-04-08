@@ -270,8 +270,6 @@ pub fn query_staked(deps: Deps) -> StdResult<ListResponse> {
 }
 
 
-
-
 #[cfg(test)]
 mod tests {
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info, MOCK_CONTRACT_ADDR};
