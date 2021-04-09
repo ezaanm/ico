@@ -213,7 +213,7 @@ pub fn _send_tokens(
         messages.push(wasm_exec);
     }
 
-    //mint required tokens to the contract itself DOES THIS EVEN WORK?
+    //mint required tokens to the contract itself
     // call into cw20-base to mint the token, call as self as no one else is allowed
     let sub_info = MessageInfo {
         sender: human_contract_address.clone(),
